@@ -14,6 +14,12 @@ export default function Home() {
           Go to Dashboard →
         </Link>
         
+        <Link
+          href="/supervisorDash"
+          className="text-blue-600 underline hover:text-blue-800"
+        >
+          Go to Supervisor Dashboard →
+        </Link>
       </div>
     </main>
   );
