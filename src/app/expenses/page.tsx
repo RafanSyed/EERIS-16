@@ -44,7 +44,7 @@ export default function MyExpensesPage() {
           Dashboard
         </Link>
         <Link
-          href="/my-expenses"
+          href="/expenses"
           className="text-blue-700 font-semibold hover:text-blue-900"
         >
           My Expenses
