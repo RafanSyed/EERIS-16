@@ -1,25 +1,15 @@
 'use client'
-import React, { useState, ChangeEvent, FormEvent } from 'react'
 
-interface FormData {
-  amount: number
-  category: string
-  date: string
-  description: string
-}
+import React, { useState, ChangeEvent, FormEvent } from 'react'
+import { db } from '../firebase/firebaseConfig'
+import { collection, addDoc, Timestamp } from 'firebase/firestore'
 
 interface SubmitExpenseFormProps {
-  onAddExpense: (data: Omit<FormData, never>) => void
+  onAddExpense?: (data: any) => void
 }
 
 export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormProps) {
-  const [mode, setMode] = useState<'form' | 'full'>('form')
-  const [form, setForm] = useState<{ amount: string; category: string; date: string; description: string }>({
-    amount: '',
-    category: '',
-    date: '',
-    description: '',
-  })
+  const [form, setForm] = useState({ amount: '', category: '', date: '', description: '' })
   const [success, setSuccess] = useState(false)
 
   const handleInput = (
@@ -29,25 +19,33 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    // Convert amount to number
     const amountNum = parseFloat(form.amount)
+
     if (isNaN(amountNum)) {
       alert('Please enter a valid amount')
       return
     }
 
-    onAddExpense({
+    const expenseData = {
       amount: amountNum,
       category: form.category,
       date: form.date,
       description: form.description,
-    })
+      submittedAt: Timestamp.now(),
+      status: 'Pending', // for supervisor later
+    }
 
-    setSuccess(true)
-    setForm({ amount: '', category: '', date: '', description: '' })
-    setTimeout(() => setSuccess(false), 3000)
+    try {
+      await addDoc(collection(db, 'expenses'), expenseData)
+      if (onAddExpense) onAddExpense(expenseData)
+      setSuccess(true)
+      setForm({ amount: '', category: '', date: '', description: '' })
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err) {
+      console.error("Error adding expense: ", err)
+    }
   }
 
   return (
@@ -56,25 +54,11 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">Amount ($)</label>
-          <input
-            type="number"
-            name="amount"
-            value={form.amount}
-            onChange={handleInput}
-            required
-            step="0.01"
-            className="w-full border border-gray-400 p-2 rounded focus:border-blue-600 focus:ring focus:ring-blue-200 text-gray-800"
-          />
+          <input type="number" name="amount" value={form.amount} onChange={handleInput} required className="w-full border p-2 rounded" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">Category</label>
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleInput}
-            required
-            className="w-full border border-gray-400 p-2 rounded focus:border-blue-600 focus:ring focus:ring-blue-200 text-gray-800"
-          >
+          <select name="category" value={form.category} onChange={handleInput} required className="w-full border p-2 rounded">
             <option value="">Select…</option>
             <option value="Travel">Travel</option>
             <option value="Meals">Meals</option>
@@ -84,30 +68,13 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">Date</label>
-          <input
-            type="date"
-            name="date"
-            value={form.date}
-            onChange={handleInput}
-            required
-            className="w-full border border-gray-400 p-2 rounded focus:border-blue-600 focus:ring focus:ring-blue-200 text-gray-800"
-          />
+          <input type="date" name="date" value={form.date} onChange={handleInput} required className="w-full border p-2 rounded" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">Description</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleInput}
-            rows={2}
-            className="w-full border border-gray-400 p-2 rounded focus:border-blue-600 focus:ring focus:ring-blue-200 text-gray-800"
-            placeholder="Optional notes"
-          />
+          <textarea name="description" value={form.description} onChange={handleInput} rows={2} className="w-full border p-2 rounded" />
         </div>
-        <button
-          type="submit"
-          className="bg-blue-700 text-white py-2 px-4 rounded hover:bg-blue-800 transition"
-        >
+        <button type="submit" className="bg-blue-700 text-white py-2 px-4 rounded hover:bg-blue-800 transition">
           Submit
         </button>
         {success && <p className="text-green-700 mt-2">✅ Submitted!</p>}
