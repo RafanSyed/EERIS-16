@@ -34,7 +34,7 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       date: form.date,
       description: form.description,
       submittedAt: Timestamp.now(),
-      status: 'Pending', // for supervisor later
+      status: 'Pending',
     }
 
     try {
