@@ -2,10 +2,12 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { getAuth, signOut } from 'firebase/auth'
 import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore'
 import { app } from '../firebase/firebaseConfig'
 import { useAuth } from '../../context/AuthContext'
-import { useRouter } from 'next/navigation'
 
 const db = getFirestore(app)
 
@@ -19,13 +21,20 @@ interface Expense {
   rejectionComment?: string
 }
 
-const SupervisorDashboard: React.FC = () => {
+export default function SupervisorDashboard() {
   const { user, role, loading } = useAuth()
   const router = useRouter()
+  const auth = getAuth(app)
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [currentRejectId, setCurrentRejectId] = useState<string | null>(null)
   const [rejectComment, setRejectComment] = useState('')
+
+  // Logout handler
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.replace('/login')
+  }
 
   // Redirect non‑supervisors
   useEffect(() => {
@@ -78,43 +87,58 @@ const SupervisorDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-4 bg-gray-100 min-h-screen text-gray-900">
-      <h1 className="text-2xl font-bold mb-4">Supervisor Dashboard</h1>
-      <table className="min-w-full bg-white rounded-lg overflow-hidden shadow">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="py-2 px-4 border-b">Employee</th>
-            <th className="py-2 px-4 border-b">Amount</th>
-            <th className="py-2 px-4 border-b">Category</th>
-            <th className="py-2 px-4 border-b">Date</th>
-            <th className="py-2 px-4 border-b">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.map(expense => (
-            <tr key={expense.id} className="border-t">
-              <td className="py-2 px-4">{expense.employeeName}</td>
-              <td className="py-2 px-4">${expense.amount}</td>
-              <td className="py-2 px-4">{expense.category}</td>
-              <td className="py-2 px-4">{expense.date}</td>
-              <td className="py-2 px-4">
-                <button
-                  className="bg-green-500 text-white px-2 py-1 rounded mr-2"
-                  onClick={() => handleDecision(expense.id, 'Approved')}
-                >
-                  Approve
-                </button>
-                <button
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                  onClick={() => openRejectModal(expense.id)}
-                >
-                  Reject
-                </button>
-              </td>
+    <div className="min-h-screen bg-gray-100 text-gray-900">
+      {/* Navigation */}
+      <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <Link href="/dashboard" className="text-blue-700 hover:text-blue-900">
+          Home
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="text-red-600 hover:text-red-800 font-medium"
+        >
+          Logout
+        </button>
+      </nav>
+
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Supervisor Dashboard</h1>
+        <table className="min-w-full bg-white rounded-lg overflow-hidden shadow">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="py-2 px-4 border-b">Employee</th>
+              <th className="py-2 px-4 border-b">Amount</th>
+              <th className="py-2 px-4 border-b">Category</th>
+              <th className="py-2 px-4 border-b">Date</th>
+              <th className="py-2 px-4 border-b">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {expenses.map(expense => (
+              <tr key={expense.id} className="border-t">
+                <td className="py-2 px-4">{expense.employeeName}</td>
+                <td className="py-2 px-4">${expense.amount}</td>
+                <td className="py-2 px-4">{expense.category}</td>
+                <td className="py-2 px-4">{expense.date}</td>
+                <td className="py-2 px-4">
+                  <button
+                    className="bg-green-500 text-white px-2 py-1 rounded mr-2"
+                    onClick={() => handleDecision(expense.id, 'Approved')}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    onClick={() => openRejectModal(expense.id)}
+                  >
+                    Reject
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Rejection Modal */}
       {showRejectModal && (
@@ -148,5 +172,3 @@ const SupervisorDashboard: React.FC = () => {
     </div>
   )
 }
-
-export default SupervisorDashboard

@@ -1,16 +1,19 @@
 // File: src/app/components/SubmitExpenseForm.tsx
 'use client'
 
+
 import React, { useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses, Expense } from '../../context/ExpensesContext'
 import { db } from '../../app/firebase/firebaseConfig'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
 
+
 interface SubmitExpenseFormProps {
   // Now omit uid, status, and submittedAt since they're set automatically
   onAddExpense?: (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'>) => void
 }
+
 
 export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormProps) {
   const { user } = useAuth()
@@ -19,12 +22,14 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+
   const handleInput = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -33,11 +38,13 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       return
     }
 
+
     const amountNum = parseFloat(form.amount)
     if (isNaN(amountNum)) {
       setError('Please enter a valid amount')
       return
     }
+
 
     const payload = {
       uid: user.uid,
@@ -49,6 +56,7 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       status: 'Pending',
       rejectionComment: '',
     }
+
 
     try {
       // Persist to Firestore (context onSnapshot will update UI)
@@ -62,6 +70,7 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       setError('Failed to submit expense')
     }
   }
+
 
   return (
     <div className="bg-white p-6 rounded-lg shadow border border-gray-300 mb-6 text-gray-900">
@@ -129,6 +138,14 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
     </div>
   )
 }
+
+
+
+
+
+
+
+
 
 
 

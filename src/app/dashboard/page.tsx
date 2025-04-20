@@ -1,7 +1,11 @@
+// File: src/app/dashboard/page.tsx
 'use client'
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { getAuth, signOut } from 'firebase/auth'
+import { app } from '../firebase/firebaseConfig'
 import ExpenseSummary from '../components/ExpenseSummary'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
@@ -17,11 +21,19 @@ import {
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const { expenses } = useExpenses()
+  const router = useRouter()
+  const auth = getAuth(app)
 
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
   const [approved, setApproved] = useState(0)
   const [rejected, setRejected] = useState(0)
+
+  // Logout handler
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.replace('/login')
+  }
 
   // Expense summary stats
   useEffect(() => {
@@ -52,7 +64,6 @@ export default function DashboardPage() {
 
   const COLORS = ['#e63946', '#2a9d8f', '#f4a261', '#264653', '#a8dadc']
 
-
   if (loading) {
     return <div className="flex items-center justify-center h-screen text-gray-900">Loading...</div>
   }
@@ -60,13 +71,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
-      <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex space-x-6">
-        <Link href="/dashboard" className="text-blue-700 font-semibold hover:text-blue-900">
-          Dashboard
-        </Link>
-        <Link href="/expenses" className="text-gray-800 hover:text-gray-900">
-          My Expenses
-        </Link>
+      <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <div className="flex space-x-6">
+          <Link href="/dashboard" className="text-blue-700 font-semibold hover:text-blue-900">
+            Dashboard
+          </Link>
+          <Link href="/expenses" className="text-gray-800 hover:text-gray-900">
+            My Expenses
+          </Link>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="text-red-600 hover:text-red-800 font-medium"
+        >
+          Logout
+        </button>
       </nav>
 
       {/* Content */}
@@ -91,7 +110,6 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    
                     data={pieData}
                     dataKey="value"
                     nameKey="name"
@@ -119,14 +137,17 @@ export default function DashboardPage() {
           <div className="inline-block bg-white p-4 rounded-lg shadow border border-gray-300">
             {total > 0 ? (() => {
               const latest = expenses
-                .filter(e => e.uid === user!.uid && e.submittedAt)
-                .sort((a, b) => b.submittedAt.toDate() - a.submittedAt.toDate())[0]
+                .filter(e => e.uid === user!.uid)
+                .sort(
+                  (a, b) =>
+                    b.submittedAt.toDate().getTime() -
+                    a.submittedAt.toDate().getTime()
+                )[0]
 
               return latest ? (
                 <p className="text-lg text-gray-800">
-                  Last expense submitted:{' '}
-                  <span className="font-medium text-gray-900">${latest.amount.toFixed(2)}</span> on{' '}
-                  <span className="text-gray-700">{new Date(latest.submittedAt.toDate()).toLocaleDateString()}</span>
+                  Last expense submitted: ${latest.amount.toFixed(2)} on{' '}
+                  {latest.submittedAt.toDate().toLocaleDateString()}
                 </p>
               ) : (
                 <p className="text-lg text-gray-800">No recent submissions</p>
