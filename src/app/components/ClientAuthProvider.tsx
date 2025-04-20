@@ -1,8 +1,8 @@
 'use client'
 import React from 'react'
-import { AuthProvider, useAuth } from '../context/AuthContext'
-import { ExpensesProvider } from '../context/ExpensesContext'
-import LoginPage from '../app/login/page'
+import { AuthProvider, useAuth } from '../../context/AuthContext'
+import { ExpensesProvider } from '../../context/ExpensesContext'
+import LoginPage from '../login/page'
 
 export default function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   return (

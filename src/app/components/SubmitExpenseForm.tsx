@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, ChangeEvent, FormEvent } from 'react'
-import { db } from '../app/firebase/firebaseConfig'
+import { db } from '../firebase/firebaseConfig'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
 
 interface SubmitExpenseFormProps {

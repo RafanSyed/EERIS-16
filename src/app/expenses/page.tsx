@@ -1,8 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import Link from 'next/link'
-import ExpenseTable from '../../components/ExpenseTables'
-import SubmitExpenseForm from '../../components/SubmitExpenseForm'
+import ExpenseTable from '../components/ExpenseTables'
+import SubmitExpenseForm from '../components/SubmitExpenseForm'
 
 import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'

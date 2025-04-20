@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
-import ExpenseSummary from '../../components/ExpenseSummary'
+import ExpenseSummary from '../components/ExpenseSummary'
 
 export default function DashboardPage() {
   // Initial state is empty
