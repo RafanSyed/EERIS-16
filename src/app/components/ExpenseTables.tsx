@@ -18,12 +18,10 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
   const { user } = useAuth()
   const { expenses } = useExpenses()
 
-
   const filtered = expenses.filter(e => {
     const expenseDate = new Date(e.date)
     const start = filter.startDate ? new Date(filter.startDate) : null
     const end = filter.endDate ? new Date(filter.endDate) : null
-
 
     return (
       e.uid === user?.uid &&
@@ -33,7 +31,6 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
       (!filter.status || e.status === filter.status)
     )
   })
-
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-300 text-gray-900">
@@ -70,6 +67,4 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
     </div>
   )
 }
-
-
 
