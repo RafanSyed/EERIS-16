@@ -27,17 +27,17 @@ export default function ExpenseTable({ filter, data }: ExpenseTableProps) {
   )
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-300">
+    <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-300 text-gray-900">
       {filtered.length === 0 ? (
         <div className="p-6 text-gray-600 text-center">No expenses to display</div>
       ) : (
         <table className="min-w-full text-left">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 text-gray-700">Date</th>
-              <th className="px-4 py-2 text-gray-700">Category</th>
-              <th className="px-4 py-2 text-gray-700">Amount</th>
-              <th className="px-4 py-2 text-gray-700">Status</th>
+              <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Category</th>
+              <th className="px-4 py-2 ">Amount</th>
+              <th className="px-4 py-2 ">Status</th>
             </tr>
           </thead>
           <tbody>
