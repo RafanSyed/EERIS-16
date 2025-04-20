@@ -4,6 +4,10 @@ import Link from 'next/link'
 import ExpenseTable from '../components/ExpenseTables'
 import SubmitExpenseForm from '../components/SubmitExpenseForm'
 
+import { useAuth } from '../../context/AuthContext'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
 // Define the shape of an expense
 interface Expense {
   id: number
@@ -14,6 +18,19 @@ interface Expense {
 }
 
 export default function MyExpensesPage() {
+
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login')
+    }
+  }, [user, loading, router])
+
+  if (loading || !user) {
+    return <p className="p-6">Loading…</p>
+  }
   const [filter, setFilter] = useState({ date: '', category: '', status: '' })
   const [expenses, setExpenses] = useState<Expense[]>([])
 
