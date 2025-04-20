@@ -90,7 +90,7 @@ export default function SupervisorDashboard() {
     <div className="min-h-screen bg-gray-100 text-gray-900">
       {/* Navigation */}
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <Link href="/dashboard" className="text-blue-700 hover:text-blue-900">
+        <Link href="/" className="text-blue-700 hover:text-blue-900">
           Home
         </Link>
         <button
