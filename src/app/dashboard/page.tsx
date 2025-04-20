@@ -57,11 +57,7 @@ export default function DashboardPage() {
           }, {})
       : {}
 
-  const pieData = Object.entries(categoryBreakdown).map(([name, value]) => ({
-    name,
-    value
-  }))
-
+  const pieData = Object.entries(categoryBreakdown).map(([name, value]) => ({ name, value }))
   const COLORS = ['#e63946', '#2a9d8f', '#f4a261', '#264653', '#a8dadc']
 
   if (loading) {
@@ -72,7 +68,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <div className="flex space-x-6">
+        <div className="flex space-x-6 items-center">
+          <Link href="/" className="text-gray-800 hover:text-gray-900">
+            Home
+          </Link>
           <Link href="/dashboard" className="text-blue-700 font-semibold hover:text-blue-900">
             Dashboard
           </Link>
@@ -109,16 +108,7 @@ export default function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    label
-                  >
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
                     {pieData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -136,22 +126,16 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Last Submission</h2>
           <div className="inline-block bg-white p-4 rounded-lg shadow border border-gray-300">
             {total > 0 ? (() => {
-              const latest = expenses
-                .filter(e => e.uid === user!.uid)
-                .sort(
-                  (a, b) =>
-                    b.submittedAt.toDate().getTime() -
-                    a.submittedAt.toDate().getTime()
-                )[0]
-
-              return latest ? (
-                <p className="text-lg text-gray-800">
-                  Last expense submitted: ${latest.amount.toFixed(2)} on{' '}
-                  {latest.submittedAt.toDate().toLocaleDateString()}
-                </p>
-              ) : (
-                <p className="text-lg text-gray-800">No recent submissions</p>
-              )
+                const latest = expenses
+                  .filter(e => e.uid === user!.uid)
+                  .sort((a, b) => b.submittedAt.toDate().getTime() - a.submittedAt.toDate().getTime())[0]
+                return latest ? (
+                  <p className="text-lg text-gray-800">
+                    Last expense submitted: ${latest.amount.toFixed(2)} on {latest.submittedAt.toDate().toLocaleDateString()}
+                  </p>
+                ) : (
+                  <p className="text-lg text-gray-800">No recent submissions</p>
+                )
             })() : (
               <p className="text-lg text-gray-800">No submissions yet</p>
             )}
