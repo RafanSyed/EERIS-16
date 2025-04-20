@@ -1,14 +1,57 @@
 'use client'
-import React from 'react'
+
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ExpenseSummary from '../components/ExpenseSummary'
+import { db } from '../firebase/firebaseConfig'
+import { collection, getDocs } from 'firebase/firestore'
+
+interface Expense {
+  status: 'Pending' | 'Approved' | 'Rejected'
+  amount: number
+}
 
 export default function DashboardPage() {
-  // Initial state is empty
-  const total = 0
-  const pending = 0
-  const approved = 0
-  const rejected = 0
+  const [isClient, setIsClient] = useState(false)
+  const [total, setTotal] = useState(0)
+  const [pending, setPending] = useState(0)
+  const [approved, setApproved] = useState(0)
+  const [rejected, setRejected] = useState(0)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'expenses'))
+        let total = 0
+        let pending = 0
+        let approved = 0
+        let rejected = 0
+
+        snapshot.forEach(doc => {
+          const data = doc.data() as Expense
+          total += 1
+          if (data.status === 'Pending') pending++
+          else if (data.status === 'Approved') approved++
+          else if (data.status === 'Rejected') rejected++
+        })
+
+        setTotal(total)
+        setPending(pending)
+        setApproved(approved)
+        setRejected(rejected)
+      } catch (error) {
+        console.error('Error fetching expenses:', error)
+      }
+    }
+
+    fetchExpenses()
+  }, [])
+
+  if (!isClient) return null
 
   return (
     <div className="min-h-screen bg-gray-100">
