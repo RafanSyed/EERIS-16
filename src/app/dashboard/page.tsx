@@ -1,6 +1,7 @@
 // File: src/app/dashboard/page.tsx
 'use client'
 
+import {navBar} from '../components/navBar'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -77,6 +78,9 @@ export default function DashboardPage() {
           </Link>
           <Link href="/expenses" className="text-gray-800 hover:text-gray-900">
             My Expenses
+          </Link>
+          <Link href="/reports" className="text-gray-800 hover:text-gray-900">
+            Report
           </Link>
         </div>
         <button
