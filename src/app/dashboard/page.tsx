@@ -3,55 +3,32 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ExpenseSummary from '../components/ExpenseSummary'
-import { db } from '../firebase/firebaseConfig'
-import { collection, getDocs } from 'firebase/firestore'
-
-interface Expense {
-  status: 'Pending' | 'Approved' | 'Rejected'
-  amount: number
-}
+import { useAuth } from '../../context/AuthContext'
+import { useExpenses } from '../../context/ExpensesContext'
 
 export default function DashboardPage() {
-  const [isClient, setIsClient] = useState(false)
+  const { user, loading } = useAuth()
+  const { expenses } = useExpenses()
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
   const [approved, setApproved] = useState(0)
   const [rejected, setRejected] = useState(0)
 
+  // Update summary when expenses or user changes
   useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, 'expenses'))
-        let total = 0
-        let pending = 0
-        let approved = 0
-        let rejected = 0
-
-        snapshot.forEach(doc => {
-          const data = doc.data() as Expense
-          total += 1
-          if (data.status === 'Pending') pending++
-          else if (data.status === 'Approved') approved++
-          else if (data.status === 'Rejected') rejected++
-        })
-
-        setTotal(total)
-        setPending(pending)
-        setApproved(approved)
-        setRejected(rejected)
-      } catch (error) {
-        console.error('Error fetching expenses:', error)
-      }
+    if (!loading && user) {
+      // Only include expenses belonging to current user
+      const userExpenses = expenses.filter(e => e.uid === user.uid)
+      setTotal(userExpenses.length)
+      setPending(userExpenses.filter(e => e.status === 'Pending').length)
+      setApproved(userExpenses.filter(e => e.status === 'Approved').length)
+      setRejected(userExpenses.filter(e => e.status === 'Rejected').length)
     }
+  }, [expenses, user, loading])
 
-    fetchExpenses()
-  }, [])
-
-  if (!isClient) return null
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen text-gray-900">Loading...</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -78,7 +55,7 @@ export default function DashboardPage() {
         <section className="mt-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Category Breakdown</h2>
           <div className="h-64 bg-white rounded-lg shadow border border-gray-300 flex items-center justify-center text-gray-600">
-            {/* Chart will populate when data exists */}
+            {/* Chart placeholder */}
             <span>No data to display</span>
           </div>
         </section>
@@ -86,7 +63,13 @@ export default function DashboardPage() {
         <section className="mt-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Last Submission</h2>
           <div className="inline-block bg-white p-4 rounded-lg shadow border border-gray-300">
-            <p className="text-lg text-gray-800">No submissions yet</p>
+            {total > 0 ? (
+              <p className="text-lg text-gray-800">
+                Last expense submitted: <span className="font-medium text-gray-900">${expenses.filter(e => e.uid === user!.uid).slice(-1)[0].amount.toFixed(2)}</span>
+              </p>
+            ) : (
+              <p className="text-lg text-gray-800">No submissions yet</p>
+            )}
           </div>
         </section>
       </main>
