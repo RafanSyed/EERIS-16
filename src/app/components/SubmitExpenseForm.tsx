@@ -32,36 +32,30 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
       setError('You must be logged in to submit an expense')
       return
     }
+
     const amountNum = parseFloat(form.amount)
     if (isNaN(amountNum)) {
       setError('Please enter a valid amount')
       return
     }
 
-    // Prepare data without id, status, uid, submittedAt
-    const payload: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'> = {
+    const payload = {
+      uid: user.uid,
       amount: amountNum,
       category: form.category,
       date: form.date,
       description: form.description,
+      submittedAt: Timestamp.now(),
+      status: 'Pending',
+      rejectionComment: '',
     }
 
     try {
-      // Write to Firestore with extra fields
-      await addDoc(collection(db, 'expenses'), {
-        ...payload,
-        uid: user.uid,
-        submittedAt: Timestamp.now(),
-        status: 'Pending',
-      })
-
-      // Update local context
-      addExpense(payload)
-      onAddExpense?.(payload)
-
+      // Persist to Firestore (context onSnapshot will update UI)
+      await addDoc(collection(db, 'expenses'), payload)
       setSuccess(true)
-      setForm({ amount: '', category: '', date: '', description: '' })
       setError(null)
+      setForm({ amount: '', category: '', date: '', description: '' })
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Error adding expense:', err)
@@ -135,3 +129,6 @@ export default function SubmitExpenseForm({ onAddExpense }: SubmitExpenseFormPro
     </div>
   )
 }
+
+
+
