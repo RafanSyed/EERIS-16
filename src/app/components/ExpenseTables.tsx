@@ -1,8 +1,10 @@
 'use client'
 
+
 import React from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
+
 
 interface Filter {
   startDate: string
@@ -10,6 +12,7 @@ interface Filter {
   description: string
   status: string
 }
+
 
 export default function ExpenseTable({ filter }: { filter: Filter }) {
   const { user } = useAuth()
@@ -64,3 +67,4 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
     </div>
   )
 }
+
