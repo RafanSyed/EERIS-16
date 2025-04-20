@@ -5,19 +5,27 @@ import Link from 'next/link'
 import ExpenseSummary from '../components/ExpenseSummary'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const { expenses } = useExpenses()
+
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
   const [approved, setApproved] = useState(0)
   const [rejected, setRejected] = useState(0)
 
-  // Update summary when expenses or user changes
+  // Expense summary stats
   useEffect(() => {
     if (!loading && user) {
-      // Only include expenses belonging to current user
       const userExpenses = expenses.filter(e => e.uid === user.uid)
       setTotal(userExpenses.length)
       setPending(userExpenses.filter(e => e.status === 'Pending').length)
@@ -25,6 +33,25 @@ export default function DashboardPage() {
       setRejected(userExpenses.filter(e => e.status === 'Rejected').length)
     }
   }, [expenses, user, loading])
+
+  // Pie chart data for approved expenses by category
+  const categoryBreakdown =
+    approved > 0
+      ? expenses
+          .filter(e => e.uid === user?.uid && e.status === 'Approved')
+          .reduce((acc: Record<string, number>, curr) => {
+            acc[curr.category] = (acc[curr.category] || 0) + curr.amount
+            return acc
+          }, {})
+      : {}
+
+  const pieData = Object.entries(categoryBreakdown).map(([name, value]) => ({
+    name,
+    value
+  }))
+
+  const COLORS = ['#e63946', '#2a9d8f', '#f4a261', '#264653', '#a8dadc']
+
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen text-gray-900">Loading...</div>
@@ -45,6 +72,8 @@ export default function DashboardPage() {
       {/* Content */}
       <main className="max-w-5xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <ExpenseSummary title="Total Submitted" value={total} />
           <ExpenseSummary title="Pending" value={pending} />
@@ -52,22 +81,57 @@ export default function DashboardPage() {
           <ExpenseSummary title="Rejected" value={rejected} />
         </div>
 
+        {/* Category Pie Chart */}
         <section className="mt-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Category Breakdown</h2>
-          <div className="h-64 bg-white rounded-lg shadow border border-gray-300 flex items-center justify-center text-gray-600">
-            {/* Chart placeholder */}
-            <span>No data to display</span>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Approved Expenses by Category</h2>
+          <div className="bg-white p-4 rounded-lg shadow border border-gray-300 h-96">
+            {pieData.length === 0 ? (
+              <p className="text-gray-600 text-center mt-20">No approved expenses yet to visualize.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    label
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </section>
 
+        {/* Last Submission */}
         <section className="mt-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Last Submission</h2>
           <div className="inline-block bg-white p-4 rounded-lg shadow border border-gray-300">
-            {total > 0 ? (
-              <p className="text-lg text-gray-800">
-                Last expense submitted: <span className="font-medium text-gray-900">${expenses.filter(e => e.uid === user!.uid).slice(-1)[0].amount.toFixed(2)}</span>
-              </p>
-            ) : (
+            {total > 0 ? (() => {
+              const latest = expenses
+                .filter(e => e.uid === user!.uid && e.submittedAt)
+                .sort((a, b) => b.submittedAt.toDate() - a.submittedAt.toDate())[0]
+
+              return latest ? (
+                <p className="text-lg text-gray-800">
+                  Last expense submitted:{' '}
+                  <span className="font-medium text-gray-900">${latest.amount.toFixed(2)}</span> on{' '}
+                  <span className="text-gray-700">{new Date(latest.submittedAt.toDate()).toLocaleDateString()}</span>
+                </p>
+              ) : (
+                <p className="text-lg text-gray-800">No recent submissions</p>
+              )
+            })() : (
               <p className="text-lg text-gray-800">No submissions yet</p>
             )}
           </div>
