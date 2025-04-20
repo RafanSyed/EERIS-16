@@ -1,30 +1,67 @@
+// File: src/context/ExpensesContext.tsx
 'use client'
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { db } from '../app/firebase/firebaseConfig'
+import { collection, query, where, onSnapshot, addDoc, Timestamp, QuerySnapshot, DocumentData } from 'firebase/firestore'
+import { useAuth } from './AuthContext'
 
 export interface Expense {
-  id: number
+  id: string  // use Firestore doc ID for uniqueness
+  uid: string
   amount: number
   category: string
   date: string
   description?: string
   status: 'Pending' | 'Approved' | 'Rejected'
+  submittedAt: Timestamp
 }
 
 interface ExpensesContextType {
   expenses: Expense[]
-  addExpense: (data: Omit<Expense, 'id' | 'status'>) => void
+  addExpense: (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'>) => Promise<void>
 }
 
 const ExpensesContext = createContext<ExpensesContextType | undefined>(undefined)
 
 export function ExpensesProvider({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
 
-  const addExpense = (data: Omit<Expense, 'id' | 'status'>) => {
-    setExpenses(prev => [
-      ...prev,
-      { id: prev.length + 1, status: 'Pending', ...data },
-    ])
+  // Subscribe to Firestore when user is available
+  useEffect(() => {
+    if (loading || !user) return
+    const q = query(
+      collection(db, 'expenses'),
+      where('uid', '==', user.uid)
+    )
+    // real-time listener
+    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+      const items: Expense[] = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          uid: data.uid,
+          amount: data.amount,
+          category: data.category,
+          date: data.date,
+          description: data.description || '',
+          status: data.status,
+          submittedAt: data.submittedAt,
+        }
+      })
+      setExpenses(items)
+    })
+    return () => unsubscribe()
+  }, [user, loading])
+
+  const addExpense = async (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'>) => {
+    if (!user) throw new Error('User not authenticated')
+    await addDoc(collection(db, 'expenses'), {
+      uid: user.uid,
+      ...data,
+      submittedAt: Timestamp.now(),
+      status: 'Pending',
+    })
   }
 
   return (
@@ -37,7 +74,7 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
 export function useExpenses() {
   const context = useContext(ExpensesContext)
   if (!context) {
-    throw new Error('useExpenses must be used within an ExpensesProvider')
+    throw new Error('useExpenses must be used within ExpensesProvider')
   }
   return context
 }
