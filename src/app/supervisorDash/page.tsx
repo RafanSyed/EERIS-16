@@ -1,13 +1,13 @@
+// File: src/app/supervisorDash/page.tsx
 'use client'
-
 
 import React, { useEffect, useState } from 'react'
 import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore'
 import { app } from '../firebase/firebaseConfig'
-
+import { useAuth } from '../../context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 const db = getFirestore(app)
-
 
 interface Expense {
   id: string
@@ -16,23 +16,35 @@ interface Expense {
   category: string
   date: string
   status: string
+  rejectionComment?: string
 }
 
-
 const SupervisorDashboard: React.FC = () => {
+  const { user, role, loading } = useAuth()
+  const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [currentRejectId, setCurrentRejectId] = useState<string | null>(null)
   const [rejectComment, setRejectComment] = useState('')
 
+  // Redirect non‑supervisors
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login')
+      } else if (role !== 'supervisor') {
+        router.replace('/dashboard')
+      }
+    }
+  }, [user, role, loading, router])
 
+  // Fetch only if supervisor
   const fetchExpenses = async () => {
     const q = query(collection(db, 'expenses'), where('status', '==', 'Pending'))
     const querySnapshot = await getDocs(q)
-    const data: Expense[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense))
+    const data = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...(docSnap.data() as any) })) as Expense[]
     setExpenses(data)
   }
-
 
   const handleDecision = async (id: string, newStatus: 'Approved' | 'Rejected', comment?: string) => {
     const expenseRef = doc(db, 'expenses', id)
@@ -43,13 +55,11 @@ const SupervisorDashboard: React.FC = () => {
     fetchExpenses()
   }
 
-
   const openRejectModal = (id: string) => {
     setCurrentRejectId(id)
     setRejectComment('')
     setShowRejectModal(true)
   }
-
 
   const confirmRejection = () => {
     if (currentRejectId) {
@@ -59,17 +69,19 @@ const SupervisorDashboard: React.FC = () => {
     setCurrentRejectId(null)
   }
 
-
   useEffect(() => {
-    fetchExpenses()
-  }, [])
+    if (!loading && role === 'supervisor') fetchExpenses()
+  }, [role, loading])
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen text-gray-900">Loading...</div>
+  }
 
   return (
-    <div className="p-4 text-gray-900">
-      <h1 className="text-2xl font-bold mb-4 text-white-900">Supervisor Dashboard</h1>
-      <table className="min-w-full bg-white">
-        <thead>
+    <div className="p-4 bg-gray-100 min-h-screen text-gray-900">
+      <h1 className="text-2xl font-bold mb-4">Supervisor Dashboard</h1>
+      <table className="min-w-full bg-white rounded-lg overflow-hidden shadow">
+        <thead className="bg-gray-200">
           <tr>
             <th className="py-2 px-4 border-b">Employee</th>
             <th className="py-2 px-4 border-b">Amount</th>
@@ -80,12 +92,12 @@ const SupervisorDashboard: React.FC = () => {
         </thead>
         <tbody>
           {expenses.map(expense => (
-            <tr key={expense.id}>
-              <td className="py-2 px-4 border-b">{expense.employeeName}</td>
-              <td className="py-2 px-4 border-b">${expense.amount}</td>
-              <td className="py-2 px-4 border-b">{expense.category}</td>
-              <td className="py-2 px-4 border-b">{expense.date}</td>
-              <td className="py-2 px-4 border-b">
+            <tr key={expense.id} className="border-t">
+              <td className="py-2 px-4">{expense.employeeName}</td>
+              <td className="py-2 px-4">${expense.amount}</td>
+              <td className="py-2 px-4">{expense.category}</td>
+              <td className="py-2 px-4">{expense.date}</td>
+              <td className="py-2 px-4">
                 <button
                   className="bg-green-500 text-white px-2 py-1 rounded mr-2"
                   onClick={() => handleDecision(expense.id, 'Approved')}
@@ -104,11 +116,10 @@ const SupervisorDashboard: React.FC = () => {
         </tbody>
       </table>
 
-
       {/* Rejection Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 text-gray-900">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg text-gray-900">
             <h2 className="text-lg font-semibold mb-2">Reason for Rejection (optional)</h2>
             <textarea
               value={rejectComment}
@@ -138,8 +149,4 @@ const SupervisorDashboard: React.FC = () => {
   )
 }
 
-
 export default SupervisorDashboard
-
-
-
