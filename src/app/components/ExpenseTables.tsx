@@ -1,25 +1,39 @@
 'use client'
 
+
 import React from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
 
+
 interface Filter {
-  date: string
-  category: string
+  startDate: string
+  endDate: string
+  description: string
   status: string
 }
+
 
 export default function ExpenseTable({ filter }: { filter: Filter }) {
   const { user } = useAuth()
   const { expenses } = useExpenses()
-  const filtered = expenses.filter(
-    e =>
+
+
+  const filtered = expenses.filter(e => {
+    const expenseDate = new Date(e.date)
+    const start = filter.startDate ? new Date(filter.startDate) : null
+    const end = filter.endDate ? new Date(filter.endDate) : null
+
+
+    return (
       e.uid === user?.uid &&
-      (!filter.date || e.date === filter.date) &&
-      (!filter.category || e.category.toLowerCase().includes(filter.category.toLowerCase())) &&
+      (!start || expenseDate >= start) &&
+      (!end || expenseDate <= end) &&
+      (!filter.description || e.description.toLowerCase().includes(filter.description.toLowerCase())) &&
       (!filter.status || e.status === filter.status)
-  )
+    )
+  })
+
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-300 text-gray-900">
@@ -45,11 +59,17 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
                 <td className="px-4 py-2">${e.amount.toFixed(2)}</td>
                 <td className="px-4 py-2">{e.status}</td>
                 <td className="px-4 py-2">{e.description}</td>
-                <td className="px-4 py-2 text-red-600">{e.status === 'Rejected' ? e.rejectionComment : ''}</td>
+                <td className="px-4 py-2 text-red-600">
+                  {e.status === 'Rejected' && e.rejectionComment ? e.rejectionComment : ''}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
     </div>
-)}
+  )
+}
+
+
+
