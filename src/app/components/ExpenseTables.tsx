@@ -1,4 +1,5 @@
 'use client'
+
 import React from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
@@ -32,6 +33,8 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
               <th className="px-4 py-2">Category</th>
               <th className="px-4 py-2">Amount</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Description</th>
+              <th className="px-4 py-2">Rejection Comment</th>
             </tr>
           </thead>
           <tbody>
@@ -41,6 +44,8 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
                 <td className="px-4 py-2">{e.category}</td>
                 <td className="px-4 py-2">${e.amount.toFixed(2)}</td>
                 <td className="px-4 py-2">{e.status}</td>
+                <td className="px-4 py-2">{e.description}</td>
+                <td className="px-4 py-2 text-red-600">{e.status === 'Rejected' ? e.rejectionComment : ''}</td>
               </tr>
             ))}
           </tbody>

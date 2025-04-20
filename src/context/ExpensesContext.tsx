@@ -2,23 +2,33 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { db } from '../app/firebase/firebaseConfig'
-import { collection, query, where, onSnapshot, addDoc, Timestamp, QuerySnapshot, DocumentData } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  Timestamp,
+  QuerySnapshot,
+  DocumentData
+} from 'firebase/firestore'
 import { useAuth } from './AuthContext'
 
 export interface Expense {
-  id: string  // use Firestore doc ID for uniqueness
+  id: string  // Firestore document ID
   uid: string
   amount: number
   category: string
   date: string
-  description?: string
+  description: string  // always a string
   status: 'Pending' | 'Approved' | 'Rejected'
   submittedAt: Timestamp
+  rejectionComment?: string  // optional comment on rejection
 }
 
 interface ExpensesContextType {
   expenses: Expense[]
-  addExpense: (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'>) => Promise<void>
+  addExpense: (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid' | 'rejectionComment'>) => Promise<void>
 }
 
 const ExpensesContext = createContext<ExpensesContextType | undefined>(undefined)
@@ -27,40 +37,45 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
 
-  // Subscribe to Firestore when user is available
   useEffect(() => {
     if (loading || !user) return
     const q = query(
       collection(db, 'expenses'),
       where('uid', '==', user.uid)
     )
-    // real-time listener
-    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-      const items: Expense[] = snapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          uid: data.uid,
-          amount: data.amount,
-          category: data.category,
-          date: data.date,
-          description: data.description || '',
-          status: data.status,
-          submittedAt: data.submittedAt,
-        }
-      })
-      setExpenses(items)
-    })
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const items: Expense[] = snapshot.docs.map(docSnap => {
+          const data = docSnap.data()
+          return {
+            id: docSnap.id,
+            uid: data.uid,
+            amount: data.amount,
+            category: data.category,
+            date: data.date,
+            description: data.description ?? '',
+            status: data.status,
+            submittedAt: data.submittedAt,
+            rejectionComment: data.rejectionComment ?? '',
+          }
+        })
+        setExpenses(items)
+      }
+    )
     return () => unsubscribe()
   }, [user, loading])
 
-  const addExpense = async (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid'>) => {
+  const addExpense = async (
+    data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid' | 'rejectionComment'>
+  ) => {
     if (!user) throw new Error('User not authenticated')
     await addDoc(collection(db, 'expenses'), {
       uid: user.uid,
       ...data,
       submittedAt: Timestamp.now(),
       status: 'Pending',
+      rejectionComment: '',
     })
   }
 
