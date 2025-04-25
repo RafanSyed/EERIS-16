@@ -89,7 +89,7 @@ export default function ReportsPage() {
             href="/reports" 
             className="text-blue-700 font-semibold hover:text-blue-900"
           >
-            Summary Report
+            Report
           </Link>
         </div>
         <button

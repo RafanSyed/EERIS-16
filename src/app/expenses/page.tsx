@@ -58,6 +58,9 @@ export default function ExpensesPage() {
           <Link href="/expenses" className="text-blue-700 font-semibold hover:text-blue-900">
             My Expenses
           </Link>
+          <Link href="/reports" className="text-gray-800 hover:text-gray-900">
+            Reports
+          </Link>
           
         </div>
         <div className="flex items-center space-x-4">
