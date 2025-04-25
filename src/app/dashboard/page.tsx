@@ -19,10 +19,11 @@ import {
 } from 'recharts'
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, role } = useAuth()
   const { expenses } = useExpenses()
   const router = useRouter()
   const auth = getAuth(app)
+  const isSupervisor = role === 'supervisor'
 
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
@@ -46,6 +47,17 @@ export default function DashboardPage() {
     }
   }, [expenses, user, loading])
 
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login')
+      } else if (role === 'supervisor' && !window.location.search.includes('from=home')) {
+        // Only redirect supervisors if they didn't explicitly navigate from home
+        router.replace('/')
+      }
+    }
+  }, [user, loading, role, router])
+
   // Pie chart data for approved expenses by category
   const categoryBreakdown =
     approved > 0
@@ -57,7 +69,9 @@ export default function DashboardPage() {
           }, {})
       : {}
 
-  const pieData = Object.entries(categoryBreakdown).map(([name, value]) => ({ name, value }))
+  const pieData = Object.entries(categoryBreakdown)
+    .filter(([_, value]) => value > 0) // Filter out categories with zero values
+    .map(([name, value]) => ({ name, value }))
   const COLORS = ['#e63946', '#2a9d8f', '#f4a261', '#264653', '#a8dadc']
 
   if (loading) {
@@ -69,14 +83,19 @@ export default function DashboardPage() {
       {/* Navigation */}
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <div className="flex space-x-6 items-center">
-          <Link href="/" className="text-gray-800 hover:text-gray-900">
-            Home
-          </Link>
+          {isSupervisor && (
+            <Link href="/" className="text-gray-800 hover:text-gray-900">
+              Home
+            </Link>
+          )}
           <Link href="/dashboard" className="text-blue-700 font-semibold hover:text-blue-900">
             Dashboard
           </Link>
           <Link href="/expenses" className="text-gray-800 hover:text-gray-900">
             My Expenses
+          </Link>
+          <Link href="/reports" className="text-gray-800 hover:text-gray-900">
+            Report
           </Link>
         </div>
         <button
@@ -108,12 +127,22 @@ export default function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                    {pieData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    paddingAngle={pieData.length > 1 ? 4 : 0}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
