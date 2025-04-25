@@ -6,9 +6,11 @@ import Link from 'next/link'
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 import { app } from '../firebase/firebaseConfig'
 import { useRouter } from 'next/navigation'
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore'
 
 export default function LoginPage() {
   const auth = getAuth(app)
+  const db = getFirestore(app)
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [pwd, setPwd] = useState('')
@@ -19,12 +21,33 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     try {
+      let userCredential;
       if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, email, pwd)
+        userCredential = await signInWithEmailAndPassword(auth, email, pwd)
       } else {
-        await createUserWithEmailAndPassword(auth, email, pwd)
+        // Create the user in Firebase Authentication
+        userCredential = await createUserWithEmailAndPassword(auth, email, pwd)
+        
+        // Create a user document in Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          id: userCredential.user.uid,
+          email: email,
+          role: 'employee', // Default role for new users
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        })
       }
-      router.replace('/dashboard')
+
+      // Check user role in Firestore
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid))
+      const role = userDoc.data()?.role || 'employee'
+
+      // Redirect based on role
+      if (role === 'supervisor') {
+        router.replace('/')
+      } else {
+        router.replace('/dashboard')
+      }
     } catch (err: any) {
       setError(err.message)
     }
@@ -67,26 +90,13 @@ export default function LoginPage() {
             {mode === 'login' ? 'Log In' : 'Sign Up'}
           </button>
         </form>
-
-        <div className="mt-4 flex justify-between text-sm">
-          {mode === 'login' ? (
-            <p>
-              Don&apos;t have an account?{' '}
-              <button onClick={() => setMode('signup')} className="text-blue-600 hover:underline">
-                Sign Up
-              </button>
-            </p>
-          ) : (
-            <p>
-              Have an account?{' '}
-              <button onClick={() => setMode('login')} className="text-blue-600 hover:underline">
-                Log In
-              </button>
-            </p>
-          )}
-          <Link href="/reset-password" className="text-blue-600 hover:underline">
-            Forgot password?
-          </Link>
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Log in'}
+          </button>
         </div>
       </div>
     </main>

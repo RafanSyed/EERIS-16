@@ -1,5 +1,6 @@
 // src/app/api/vision/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+console.log('🔑 VISION_API_KEY is:', process.env.VISION_API_KEY)
 
 export const config = {
   api: {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Call Google Vision
-  const visionKey = process.env.API_KEY
+  const visionKey = process.env.VISION_API_KEY
   const visionRes = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${visionKey}`,
     {

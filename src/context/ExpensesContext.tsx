@@ -10,7 +10,9 @@ import {
   addDoc,
   Timestamp,
   QuerySnapshot,
-  DocumentData
+  DocumentData,
+  doc,
+  updateDoc
 } from 'firebase/firestore'
 import { useAuth } from './AuthContext'
 
@@ -29,20 +31,24 @@ export interface Expense {
 interface ExpensesContextType {
   expenses: Expense[]
   addExpense: (data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid' | 'rejectionComment'>) => Promise<void>
+  updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'uid' | 'submittedAt'>>) => Promise<void>
 }
 
 const ExpensesContext = createContext<ExpensesContextType | undefined>(undefined)
 
 export function ExpensesProvider({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, role } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
 
   useEffect(() => {
     if (loading || !user) return
-    const q = query(
-      collection(db, 'expenses'),
-      where('uid', '==', user.uid)
-    )
+    
+    // For supervisors, fetch all expenses
+    // For regular employees, fetch only their expenses
+    const q = role === 'supervisor'
+      ? collection(db, 'expenses')
+      : query(collection(db, 'expenses'), where('uid', '==', user.uid))
+
     const unsubscribe = onSnapshot(
       q,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -64,7 +70,7 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
       }
     )
     return () => unsubscribe()
-  }, [user, loading])
+  }, [user, loading, role])
 
   const addExpense = async (
     data: Omit<Expense, 'id' | 'status' | 'submittedAt' | 'uid' | 'rejectionComment'>
@@ -79,8 +85,14 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const updateExpense = async (id: string, data: Partial<Omit<Expense, 'id' | 'uid' | 'submittedAt'>>) => {
+    if (!user) throw new Error('User not authenticated')
+    const expenseRef = doc(db, 'expenses', id)
+    await updateDoc(expenseRef, data)
+  }
+
   return (
-    <ExpensesContext.Provider value={{ expenses, addExpense }}>
+    <ExpensesContext.Provider value={{ expenses, addExpense, updateExpense }}>
       {children}
     </ExpensesContext.Provider>
   )

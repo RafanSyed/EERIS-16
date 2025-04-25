@@ -67,4 +67,3 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
     </div>
   )
 }
-

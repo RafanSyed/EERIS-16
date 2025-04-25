@@ -1,20 +1,21 @@
 'use client'
 
-
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ExpenseTable from '../components/ExpenseTables'
-import SubmitExpenseForm from '../components/SubmitExpenseForm'
+import ReceiptUploadForm from '../components/ReceiptUploadForm'
 import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useExpenses } from '../../context/ExpensesContext'
+import { getAuth, signOut } from 'firebase/auth'
+import { app } from '../firebase/firebaseConfig'
 
-
-export default function MyExpensesPage() {
-  const { user, loading } = useAuth()
+export default function ExpensesPage() {
+  const { user, loading, role } = useAuth()
   const router = useRouter()
   const { expenses } = useExpenses()
-
+  const auth = getAuth(app)
+  const isSupervisor = role === 'supervisor'
 
   useEffect(() => {
     if (!loading && !user) {
@@ -22,45 +23,61 @@ export default function MyExpensesPage() {
     }
   }, [user, loading, router])
 
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.replace('/login')
+  }
 
   if (loading || !user) {
     return <div className="p-6 text-gray-900">Loading…</div>
   }
-
 
   const [filter, setFilter] = useState({
     startDate: '',
     endDate: '',
     description: '',
     status: '',
+    employee: '',
   })
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setFilter({ ...filter, [e.target.name]: e.target.value })
 
-
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex space-x-6">
-        <Link href="/dashboard" className="text-gray-800 hover:text-gray-900">
-          Dashboard
-        </Link>
-        <Link href="/expenses" className="text-blue-700 font-semibold hover:text-blue-900">
-          My Expenses
-        </Link>
-        <Link href="/reports" className="text-blue-700 font-semibold hover:text-blue-900">
-          Reports
-        </Link>
+      <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <div className="flex space-x-6 items-center">
+          {isSupervisor && (
+            <Link href="/" className="text-gray-800 hover:text-gray-900">
+              Home
+            </Link>
+          )}
+          <Link href="/dashboard" className="text-gray-800 hover:text-gray-900">
+            Dashboard
+          </Link>
+          <Link href="/expenses" className="text-blue-700 font-semibold hover:text-blue-900">
+            My Expenses
+          </Link>
+          <Link href="/reports" className="text-gray-800 hover:text-gray-900">
+            Reports
+          </Link>
+          
+        </div>
+        <div className="flex items-center space-x-4">
+          
+          <button
+            onClick={handleLogout}
+            className="text-red-600 hover:text-red-800 font-medium"
+          >
+            Logout
+          </button>
+        </div>
       </nav>
 
-
-      <main className="max-w-5xl mx-auto p-6 space-y-8">
+      <main className="max-w-7xl mx-auto p-6 space-y-8">
         <h1 className="text-3xl font-bold text-gray-900">My Expenses</h1>
 
-
-        <SubmitExpenseForm />
-
+        <ReceiptUploadForm />
 
         <div className="bg-white p-4 rounded-lg shadow border border-gray-300 grid grid-cols-1 md:grid-cols-4 gap-4 text-gray-900">
           <input
@@ -99,7 +116,6 @@ export default function MyExpensesPage() {
             <option value="Rejected">Rejected</option>
           </select>
         </div>
-
 
         <ExpenseTable filter={filter} />
       </main>
