@@ -1,4 +1,5 @@
 'use client'
+
 import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
@@ -21,7 +22,6 @@ export default function ReportsPage() {
     if (!loading && !user) {
       router.replace('/login')
     } else if (role === 'employee') {
-      // List of supervisor-only pages and the root path
       const restrictedPages = ['/', '/supervisorDash', '/approve-expenses', '/supervisor-reports', '/user-management']
       if (restrictedPages.includes(window.location.pathname)) {
         router.replace('/dashboard')
@@ -76,20 +76,14 @@ export default function ReportsPage() {
               Home
             </Link>
           )}
-          <Link 
-            href={role === 'supervisor' ? '/supervisorDash' : '/dashboard'} 
-            className="text-black hover:text-gray-900"
-          >
+          <Link href="/dashboard" className="text-black hover:text-gray-900">
             Dashboard
           </Link>
           <Link href="/expenses" className="text-black hover:text-gray-900">
             My Expenses
           </Link>
-          <Link 
-            href="/reports" 
-            className="text-blue-700 font-semibold hover:text-blue-900"
-          >
-            Report
+          <Link href="/reports" className="text-blue-700 font-semibold hover:text-blue-900">
+            Summary Report
           </Link>
         </div>
         <button
@@ -102,7 +96,7 @@ export default function ReportsPage() {
 
       <main className="max-w-5xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+          <h1 className="text-3xl font-bold text-black">Reports</h1>
           <div className="flex items-center space-x-4">
             <button
               onClick={() => window.print()}
@@ -116,19 +110,19 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Print Header - Only visible when printing */}
+        {/* Print-only Header */}
         <div className="hidden print:block mb-8">
-          <h1 className="text-3xl font-bold text-center mb-4">Expense Report Summary</h1>
-          <div className="text-center mb-4">
+          <h1 className="text-3xl font-bold text-center text-black mb-4">Expense Report Summary</h1>
+          <div className="text-center text-black mb-4">
             <p>Generated on: {new Date().toLocaleDateString()}</p>
             <p>Period: {filters.startDate || 'Start'} to {filters.endDate || 'End'}</p>
           </div>
         </div>
 
-        {/* Print Summary Table - Only visible when printing */}
+        {/* Print-only Summary Table */}
         <div className="hidden print:block mb-8">
-          <h2 className="text-2xl font-semibold text-center mb-4">Expense Summary</h2>
-          <table className="min-w-full border border-gray-300">
+          <h2 className="text-2xl font-semibold text-center text-black mb-4">Expense Summary</h2>
+          <table className="min-w-full border border-gray-300 text-black">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 px-4 py-2">Category</th>
@@ -142,7 +136,6 @@ export default function ReportsPage() {
                 const categoryExpenses = filteredExpenses.filter(e => e.category === category)
                 const count = categoryExpenses.length
                 const average = count > 0 ? total / count : 0
-                
                 return (
                   <tr key={category}>
                     <td className="border border-gray-300 px-4 py-2">{category}</td>
@@ -152,78 +145,40 @@ export default function ReportsPage() {
                   </tr>
                 )
               })}
-              <tr className="bg-gray-100 font-bold">
-                <td className="border border-gray-300 px-4 py-2">Total</td>
-                <td className="border border-gray-300 px-4 py-2">
-                  ${filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
-                </td>
-                <td className="border border-gray-300 px-4 py-2">{filteredExpenses.length}</td>
-                <td className="border border-gray-300 px-4 py-2">
-                  ${(filteredExpenses.reduce((sum, e) => sum + e.amount, 0) / (filteredExpenses.length || 1)).toFixed(2)}
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
 
-        {/* Status Summary Table - Only visible when printing */}
-        <div className="hidden print:block mb-8">
-          <h2 className="text-2xl font-semibold text-center mb-4">Status Summary</h2>
-          <table className="min-w-full border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-2">Status</th>
-                <th className="border border-gray-300 px-4 py-2">Count</th>
-                <th className="border border-gray-300 px-4 py-2">Total Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['Approved', 'Pending', 'Rejected'].map(status => {
-                const statusExpenses = filteredExpenses.filter(e => e.status === status)
-                const total = statusExpenses.reduce((sum, e) => sum + e.amount, 0)
-                
-                return (
-                  <tr key={status}>
-                    <td className="border border-gray-300 px-4 py-2">{status}</td>
-                    <td className="border border-gray-300 px-4 py-2">{statusExpenses.length}</td>
-                    <td className="border border-gray-300 px-4 py-2">${total.toFixed(2)}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Filters - Hidden when printing */}
+        {/* Filters */}
         <div className="bg-white p-6 rounded-lg shadow mb-6 print:hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-black mb-1">Start Date</label>
               <input
                 type="date"
                 name="startDate"
                 value={filters.startDate}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-black mb-1">End Date</label>
               <input
                 type="date"
                 name="endDate"
                 value={filters.endDate}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-black mb-1">Status</label>
               <select
                 name="status"
                 value={filters.status}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded text-black"
               >
                 <option value="">All Statuses</option>
                 <option value="Approved">Approved</option>
@@ -232,12 +187,12 @@ export default function ReportsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-black mb-1">Category</label>
               <select
                 name="category"
                 value={filters.category}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded text-black"
               >
                 <option value="">All Categories</option>
                 <option value="Travel">Travel</option>
@@ -250,13 +205,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Charts - Hidden when printing */}
+        {/* Charts */}
         <div className="space-y-6 print:hidden">
-          {/* Top Row - Pie and Bar Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Pie Chart */}
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Expenses by Category</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">Expenses by Category</h2>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -266,7 +219,6 @@ export default function ReportsPage() {
                       cy="50%"
                       labelLine={false}
                       outerRadius={100}
-                      fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
@@ -280,14 +232,13 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Bar Chart */}
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Expenses Over Time</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">Expenses Over Time</h2>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={filteredExpenses}>
-                    <XAxis dataKey="date" />
-                    <YAxis />
+                    <XAxis dataKey="date" stroke="#000" />
+                    <YAxis stroke="#000" />
                     <Tooltip />
                     <Bar dataKey="amount" fill="#3B82F6" />
                   </BarChart>
@@ -296,28 +247,17 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Bottom Row - Line Chart */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Spending Trend</h2>
+            <h2 className="text-xl font-semibold text-black mb-4">Spending Trend</h2>
             <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={filteredExpenses
-                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                    .map(e => ({ date: e.date, amount: e.amount }))}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  data={filteredExpenses.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(e => ({ date: e.date, amount: e.amount }))}
                 >
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" stroke="#000" />
+                  <YAxis stroke="#000" />
                   <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#10B981" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
+                  <Line type="monotone" dataKey="amount" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

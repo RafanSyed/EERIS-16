@@ -1,7 +1,6 @@
 // File: src/app/dashboard/page.tsx
 'use client'
 
-import {navBar} from '../components/navBar'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -52,8 +51,10 @@ export default function DashboardPage() {
     if (!loading) {
       if (!user) {
         router.replace('/login')
-      } else if (role === 'supervisor' && !window.location.search.includes('from=home')) {
-        // Only redirect supervisors if they didn't explicitly navigate from home
+      } else if (
+        role === 'supervisor' &&
+        !window.location.search.includes('from=home')
+      ) {
         router.replace('/')
       }
     }
@@ -71,12 +72,16 @@ export default function DashboardPage() {
       : {}
 
   const pieData = Object.entries(categoryBreakdown)
-    .filter(([_, value]) => value > 0) // Filter out categories with zero values
+    .filter(([_, value]) => value > 0)
     .map(([name, value]) => ({ name, value }))
   const COLORS = ['#e63946', '#2a9d8f', '#f4a261', '#264653', '#a8dadc']
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen text-gray-900">Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-900">
+        Loading...
+      </div>
+    )
   }
 
   return (
@@ -89,14 +94,17 @@ export default function DashboardPage() {
               Home
             </Link>
           )}
-          <Link href="/dashboard" className="text-blue-700 font-semibold hover:text-blue-900">
+          <Link
+            href="/dashboard"
+            className="text-blue-700 font-semibold hover:text-blue-900"
+          >
             Dashboard
           </Link>
           <Link href="/expenses" className="text-gray-800 hover:text-gray-900">
             My Expenses
           </Link>
           <Link href="/reports" className="text-gray-800 hover:text-gray-900">
-            Report
+            Summary Report
           </Link>
         </div>
         <button
@@ -121,10 +129,14 @@ export default function DashboardPage() {
 
         {/* Category Pie Chart */}
         <section className="mt-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Approved Expenses by Category</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Approved Expenses by Category
+          </h2>
           <div className="bg-white p-4 rounded-lg shadow border border-gray-300 h-96">
             {pieData.length === 0 ? (
-              <p className="text-gray-600 text-center mt-20">No approved expenses yet to visualize.</p>
+              <p className="text-gray-600 text-center mt-20">
+                No approved expenses yet to visualize.
+              </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -136,14 +148,16 @@ export default function DashboardPage() {
                     cy="50%"
                     outerRadius={100}
                     paddingAngle={pieData.length > 1 ? 4 : 0}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
                   >
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                  <Tooltip formatter={value => [`$${value}`, 'Amount']} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -153,20 +167,30 @@ export default function DashboardPage() {
 
         {/* Last Submission */}
         <section className="mt-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Last Submission</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Last Submission
+          </h2>
           <div className="inline-block bg-white p-4 rounded-lg shadow border border-gray-300">
-            {total > 0 ? (() => {
+            {total > 0 ? (
+              (() => {
                 const latest = expenses
                   .filter(e => e.uid === user!.uid)
-                  .sort((a, b) => b.submittedAt.toDate().getTime() - a.submittedAt.toDate().getTime())[0]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime()
+                  )[0]
                 return latest ? (
                   <p className="text-lg text-gray-800">
-                    Last expense submitted: ${latest.amount.toFixed(2)} on {latest.submittedAt.toDate().toLocaleDateString()}
+                    Last expense submitted: ${latest.amount.toFixed(2)} on{' '}
+                    {new Date(latest.date).toLocaleDateString()}
                   </p>
                 ) : (
-                  <p className="text-lg text-gray-800">No recent submissions</p>
+                  <p className="text-lg text-gray-800">
+                    No recent submissions
+                  </p>
                 )
-            })() : (
+              })()
+            ) : (
               <p className="text-lg text-gray-800">No submissions yet</p>
             )}
           </div>

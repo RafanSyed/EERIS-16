@@ -2,18 +2,24 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import ExpenseTable from '../components/ExpenseTables'
-import ReceiptUploadForm from '../components/ReceiptUploadForm'
-import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useExpenses } from '../../context/ExpensesContext'
+import ReceiptUploadForm from '../components/ReceiptUploadForm'
+import ExpenseTable from '../components/ExpenseTables'
+import { useAuth } from '../../context/AuthContext'
 import { getAuth, signOut } from 'firebase/auth'
 import { app } from '../firebase/firebaseConfig'
+
+interface Filter {
+  startDate: string
+  endDate: string
+  description: string
+  status: string
+  employee: string
+}
 
 export default function ExpensesPage() {
   const { user, loading, role } = useAuth()
   const router = useRouter()
-  const { expenses } = useExpenses()
   const auth = getAuth(app)
   const isSupervisor = role === 'supervisor'
 
@@ -28,20 +34,21 @@ export default function ExpensesPage() {
     router.replace('/login')
   }
 
-  if (loading || !user) {
-    return <div className="p-6 text-gray-900">Loading…</div>
-  }
-
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<Filter>({
     startDate: '',
     endDate: '',
     description: '',
     status: '',
-    employee: '',
+    employee: ''
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setFilter({ ...filter, [e.target.name]: e.target.value })
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => setFilter(prev => ({ ...prev, [e.target.name]: e.target.value }))
+
+  if (loading || !user) {
+    return <div className="p-6 text-gray-900">Loading…</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -59,19 +66,15 @@ export default function ExpensesPage() {
             My Expenses
           </Link>
           <Link href="/reports" className="text-gray-800 hover:text-gray-900">
-            Reports
+            Summary Report
           </Link>
-          
         </div>
-        <div className="flex items-center space-x-4">
-          
-          <button
-            onClick={handleLogout}
-            className="text-red-600 hover:text-red-800 font-medium"
-          >
-            Logout
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="text-red-600 hover:text-red-800 font-medium"
+        >
+          Logout
+        </button>
       </nav>
 
       <main className="max-w-7xl mx-auto p-6 space-y-8">
@@ -86,7 +89,6 @@ export default function ExpensesPage() {
             value={filter.startDate}
             onChange={handleChange}
             className="border border-gray-400 p-2 rounded"
-            placeholder="Start date"
           />
           <input
             type="date"
@@ -94,7 +96,6 @@ export default function ExpensesPage() {
             value={filter.endDate}
             onChange={handleChange}
             className="border border-gray-400 p-2 rounded"
-            placeholder="End date"
           />
           <input
             type="text"
@@ -122,6 +123,3 @@ export default function ExpensesPage() {
     </div>
   )
 }
-
-
-
