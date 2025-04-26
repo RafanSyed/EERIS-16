@@ -1,9 +1,31 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
+import { db } from '../firebase/firebaseConfig'
+import { doc, updateDoc } from 'firebase/firestore'
+
+const categories = [
+  'Groceries',
+  'Tech',
+  'Fun',
+  'Travel',
+  'Market',
+  'Office Supplies',
+  'Meals',
+  'Other'
+]
 
 export default function ExpenseDetailsModal({ expense, onClose }: { expense: any; onClose: () => void }) {
   if (!expense) return null
+
+  const [editedExpense, setEditedExpense] = useState({ ...expense })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setEditedExpense((prev: any) => ({ ...prev, [name]: value }))
+  }
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -30,11 +52,36 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
     }
   }
 
+  const handleSaveChanges = async () => {
+    try {
+      setSaving(true)
+      setError(null)
+
+      const expenseRef = doc(db, 'expenses', expense.id)
+      await updateDoc(expenseRef, {
+        merchant: editedExpense.merchant,
+        amount: parseFloat(editedExpense.amount),
+        category: editedExpense.category,
+        date: editedExpense.date,
+        description: editedExpense.description,
+        status: 'Pending', // Reset status to Pending
+        rejectionComment: ''
+      })
+
+      onClose()
+    } catch (err) {
+      console.error(err)
+      setError('Failed to save changes')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Expense Details</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Edit Expense</h2>
           <button
             onClick={onClose}
             className="text-gray-600 hover:text-gray-800 text-xl font-bold"
@@ -42,26 +89,82 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
             ✕
           </button>
         </div>
+
         <div className="space-y-4 text-gray-800">
-          <div><strong>Merchant:</strong> {expense.merchant}</div>
-          <div><strong>Amount:</strong> ${expense.amount.toFixed(2)}</div>
-          <div><strong>Category:</strong> {expense.category}</div>
-          <div><strong>Date:</strong> {expense.date}</div>
+          <div>
+            <label className="block font-semibold">Merchant</label>
+            <input
+              name="merchant"
+              value={editedExpense.merchant}
+              onChange={handleChange}
+              className="w-full border p-2 rounded text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold">Amount</label>
+            <input
+              name="amount"
+              type="number"
+              step="0.01"
+              value={editedExpense.amount}
+              onChange={handleChange}
+              className="w-full border p-2 rounded text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold">Category</label>
+            <select
+              name="category"
+              value={editedExpense.category}
+              onChange={handleChange}
+              className="w-full border p-2 rounded text-gray-900"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={editedExpense.date}
+              onChange={handleChange}
+              className="w-full border p-2 rounded text-gray-900"
+            />
+          </div>
+
           <div className="flex items-center space-x-2">
             <strong>Status:</strong> {renderStatusBadge(expense.status)}
           </div>
-          {expense.rejectionComment && (
-            <div className="text-red-600">
-              <strong>Rejection Comment:</strong> {expense.rejectionComment}
-            </div>
-          )}
+
           <div>
-            <strong>Items:</strong>
-            <ul className="list-disc list-inside mt-2">
-              {expense.description.split(';').map((item: string, index: number) => (
-                <li key={index} className="text-gray-700">{item.trim()}</li>
-              ))}
-            </ul>
+            <label className="block font-semibold">Items</label>
+            <textarea
+              name="description"
+              value={editedExpense.description}
+              onChange={handleChange}
+              className="w-full border p-2 rounded text-gray-900"
+              rows={4}
+            />
+          </div>
+
+          {error && <p className="text-red-600">{error}</p>}
+
+          <div className="flex justify-end mt-6 space-x-4">
+            <button
+              onClick={handleSaveChanges}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </div>
       </div>

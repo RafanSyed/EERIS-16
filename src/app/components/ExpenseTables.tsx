@@ -31,15 +31,11 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
 
   const filtered = expenses.filter(e => {
-    // Always only show the expenses of the current user
-    if (e.uid !== user?.uid) {
-      return false;
-    }
-  
+    if (e.uid !== user?.uid) return false
     const d = new Date(e.date)
     const start = filter.startDate ? new Date(filter.startDate) : null
     const end = filter.endDate ? new Date(filter.endDate) : null
-  
+
     return (
       (!filter.employee || e.uid === filter.employee) &&
       (!start || d >= start) &&
@@ -48,9 +44,6 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
       (!filter.status || e.status === filter.status)
     )
   })
-  
-  
-  
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -100,11 +93,9 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
                 onClick={() => setSelectedExpense(e)}
               >
                 <td className="px-4 py-2 text-gray-900">{e.date}</td>
-                <td className="px-4 py-2 text-gray-900">{e.category}</td>
+                <td className="px-4 py-2 text-gray-900">{e.category}</td> {/* 👈 Category is now shown as simple text */}
                 <td className="px-4 py-2 text-gray-900">${e.amount.toFixed(2)}</td>
-                <td className="px-4 py-2">
-                  {renderStatusBadge(e.status)}
-                </td>
+                <td className="px-4 py-2">{renderStatusBadge(e.status)}</td>
                 <td className="px-4 py-2 text-gray-900">{e.merchant}</td>
               </tr>
             ))}

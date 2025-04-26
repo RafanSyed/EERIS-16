@@ -21,6 +21,17 @@ export default function ReceiptUploadForm() {
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const categories = [
+    'Groceries',
+    'Tech',
+    'Fun',
+    'Travel',
+    'Market',
+    'Office Supplies',
+    'Meals',
+    'Other'
+  ]
+
   const handleInput = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -51,7 +62,7 @@ export default function ReceiptUploadForm() {
         const vj = await vis.json()
         if (!vis.ok) throw new Error(vj.error || 'Vision failed')
         const { ocrText } = vj
-  
+
         const gm = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -60,11 +71,11 @@ export default function ReceiptUploadForm() {
         const gj = await gm.json()
         if (!gm.ok) throw new Error(gj.error || 'Parse failed')
         const { parsed } = gj
-  
+
         setForm({
           merchant: parsed.merchant || '',
           amount: parsed.total?.toString() || '',
-          category: parsed.category || '',
+          category: '', // Keep category empty for user to select manually
           date: new Date().toISOString().split('T')[0],
           description: parsed.items.map((i: any) => `${i.description}: $${i.price}`).join('; ')
         })
@@ -161,14 +172,23 @@ export default function ReceiptUploadForm() {
           className="w-full border border-gray-400 text-gray-900 p-2 rounded placeholder-gray-500"
           required
         />
-        <input
+
+        {/* Category Dropdown */}
+        <select
           name="category"
           value={form.category}
           onChange={handleInput}
-          placeholder="Category"
-          className="w-full border border-gray-400 text-gray-900 p-2 rounded placeholder-gray-500"
+          className="w-full border border-gray-400 text-gray-900 p-2 rounded"
           required
-        />
+        >
+          <option value="">Select Category</option>
+          {categories.map(cat => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+
         <input
           type="date"
           name="date"
