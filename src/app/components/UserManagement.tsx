@@ -1,26 +1,37 @@
+// File: src/app/components/UserManagement.tsx
+
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase/firebaseConfig'
 import { useAuth } from '../../context/AuthContext'
+import router from 'next/router'
 
 interface User {
   id: string
   email: string
-  role: 'employee' | 'supervisor'
+  fullName?: string
+  role: 'employee' | 'supervisor' | 'admin'
 }
 
 export default function UserManagement() {
-  const { role } = useAuth()
+  const { role, user } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [pendingChanges, setPendingChanges] = useState<Record<string, 'employee' | 'supervisor'>>({})
 
-  useEffect(() => {
-    if (role !== 'supervisor') return
 
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push('/login')
+      } else if (role === 'employee') {
+        router.push('/dashboard')
+      }
+    }
+    
     const fetchUsers = async () => {
       try {
         const snapshot = await getDocs(collection(db, 'users'))
@@ -36,9 +47,13 @@ export default function UserManagement() {
         setLoading(false)
       }
     }
-
-    fetchUsers()
-  }, [role])
+  
+    if (role === 'admin') { // Only fetch users if admin
+      fetchUsers()
+    }
+  }, [role, user, loading])
+  
+  
 
   const handleRoleChange = (userId: string, newRole: 'employee' | 'supervisor') => {
     setPendingChanges(prev => ({
@@ -63,9 +78,17 @@ export default function UserManagement() {
     }
   }
 
-  if (role !== 'supervisor') {
-    return <div className="text-red-600">Access denied. Only supervisors can manage users.</div>
+  if (role === 'employee' || 'supervisor') {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
+          <p className='text-1xl font-bold mb-6 text-gray-900'>Only supervisors can access this page.</p>
+        </div>
+      </div>
+    )
   }
+  
 
   if (loading) {
     return <div>Loading users...</div>
@@ -73,37 +96,66 @@ export default function UserManagement() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">User Management</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900">User Management</h2>
       {error && <div className="text-red-600 mb-4">{error}</div>}
+
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Change Role</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map(user => (
               <tr key={user.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.fullName || 'User'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.role}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  {user.role === 'employee' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      Employee
+                    </span>
+                  )}
+                  {user.role === 'supervisor' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      Supervisor
+                    </span>
+                  )}
+                  {user.role === 'admin' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-300 text-gray-800">
+                      Admin
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <select
-                    value={pendingChanges[user.id] || user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value as 'employee' | 'supervisor')}
-                    className="border border-gray-300 rounded-md px-3 py-1"
-                  >
-                    <option value="employee">Employee</option>
-                    <option value="supervisor">Supervisor</option>
-                  </select>
+                  {user.role === 'admin' ? (
+                    <select
+                      disabled
+                      className="bg-gray-100 border border-gray-300 p-2 rounded cursor-not-allowed w-full"
+                    >
+                      <option value="admin">Admin</option>
+                    </select>
+                  ) : (
+                    <select
+                      value={pendingChanges[user.id] || user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value as 'employee' | 'supervisor')}
+                      className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                    >
+                      <option value="employee">Employee</option>
+                      <option value="supervisor">Supervisor</option>
+                    </select>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
       {Object.keys(pendingChanges).length > 0 && (
         <div className="mt-6 flex justify-end">
           <button
@@ -116,4 +168,4 @@ export default function UserManagement() {
       )}
     </div>
   )
-} 
+}

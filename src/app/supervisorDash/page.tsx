@@ -14,7 +14,7 @@ const db = getFirestore(app)
 
 
 export default function SupervisorDashboardPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, role } = useAuth()
   const { expenses } = useExpenses()
   const router = useRouter()
   const auth = getAuth(app)
@@ -29,10 +29,14 @@ export default function SupervisorDashboardPage() {
   const [userNames, setUserNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login')
+    if (!loading) {
+      if (!user) {
+        router.push('/login')
+      } else if (role === 'employee') {
+        router.push('/dashboard')
+      }
     }
-  }, [user, loading, router])
+  }, [user, loading, role, router])
 
   useEffect(() => {
     const fetchUserNames = async () => {

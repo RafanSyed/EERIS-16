@@ -35,10 +35,12 @@ export default function ApproveExpensesPage() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login')
-    } else if (role !== 'supervisor') {
-      router.replace('/dashboard')
+    if (!loading) {
+      if (!user) {
+        router.push('/login')
+      } else if (role === 'employee') {
+        router.push('/dashboard')
+      }
     }
   }, [user, loading, role, router])
 
@@ -119,12 +121,12 @@ export default function ApproveExpensesPage() {
     return <div className="p-6 text-gray-900">Loading…</div>
   }
 
-  if (role !== 'supervisor') {
+  if (role === 'employee') {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-          <p>Only supervisors can access this page.</p>
+          <p className='text-1xl font-bold mb-6 text-gray-900'>Only supervisors can access this page.</p>
         </div>
       </div>
     )
