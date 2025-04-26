@@ -67,7 +67,7 @@ export default function Home() {
               </Link>
               
               <Link
-                href="/supervisor-dashboard"
+                href="/supervisorDash"
                 className="bg-green-600 text-white p-6 rounded-lg shadow hover:bg-green-700 transition-colors flex flex-col items-center justify-center aspect-square"
               >
                 <h3 className="text-xl font-semibold mb-2">Supervisor</h3>
