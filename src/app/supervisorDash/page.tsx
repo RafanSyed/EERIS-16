@@ -1,28 +1,17 @@
-// File: src/app/supervisorDash/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getAuth, signOut } from 'firebase/auth'
-import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { app } from '../firebase/firebaseConfig'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
 import ExpenseTable from '../components/ExpenseTables'
-import UserManagement from '../components/UserManagement'
 
 const db = getFirestore(app)
 
-interface Expense {
-  id: string
-  employeeName: string
-  amount: number
-  category: string
-  date: string
-  status: string
-  rejectionComment?: string
-}
 
 export default function SupervisorDashboardPage() {
   const { user, loading } = useAuth()
@@ -37,6 +26,7 @@ export default function SupervisorDashboardPage() {
     status: '',
     employee: '',
   })
+  const [userNames, setUserNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,20 +34,40 @@ export default function SupervisorDashboardPage() {
     }
   }, [user, loading, router])
 
+  useEffect(() => {
+    const fetchUserNames = async () => {
+      const uniqueUids = Array.from(new Set(expenses.map(e => e.uid)))
+
+      const names: Record<string, string> = {}
+      for (const uid of uniqueUids) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', uid))
+          names[uid] = userDoc.data()?.fullName || 'User'
+        } catch {
+          names[uid] = 'User'
+        }
+      }
+      setUserNames(names)
+    }
+
+    if (expenses.length > 0) {
+      fetchUserNames()
+    }
+  }, [expenses])
+
   const handleLogout = async () => {
     await signOut(auth)
     router.replace('/login')
   }
 
-  if (loading || !user) {
-    return <div className="p-6 text-gray-900">Loading…</div>
-  }
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setFilter({ ...filter, [e.target.name]: e.target.value })
 
-  // Get unique employee emails
-  const employeeEmails = [...new Set(expenses.map(expense => expense.uid))]
+  const employeeUids = [...new Set(expenses.map(expense => expense.uid))]
+
+  if (loading || !user) {
+    return <div className="p-6 text-gray-900">Loading…</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -72,7 +82,6 @@ export default function SupervisorDashboardPage() {
           <Link href="/approve-expenses" className="text-gray-800 hover:text-gray-900">
             Approve Expenses
           </Link>
-          
           <Link href="/user-management" className="text-gray-800 hover:text-gray-900">
             User Management
           </Link>
@@ -131,9 +140,9 @@ export default function SupervisorDashboardPage() {
             className="border border-gray-400 p-2 rounded"
           >
             <option value="">All Employees</option>
-            {employeeEmails.map((email, index) => (
-              <option key={`${email}-${index}`} value={email}>
-                {email}
+            {employeeUids.map((uid, index) => (
+              <option key={`${uid}-${index}`} value={uid}>
+                {userNames[uid] || 'User'}
               </option>
             ))}
           </select>
