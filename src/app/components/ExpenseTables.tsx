@@ -31,18 +31,26 @@ export default function ExpenseTable({ filter }: { filter: Filter }) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
 
   const filtered = expenses.filter(e => {
+    // Always only show the expenses of the current user
+    if (e.uid !== user?.uid) {
+      return false;
+    }
+  
     const d = new Date(e.date)
     const start = filter.startDate ? new Date(filter.startDate) : null
     const end = filter.endDate ? new Date(filter.endDate) : null
+  
     return (
       (!filter.employee || e.uid === filter.employee) &&
       (!start || d >= start) &&
       (!end || d <= end) &&
-      (!filter.description ||
-        e.description.toLowerCase().includes(filter.description.toLowerCase())) &&
+      (!filter.description || e.description.toLowerCase().includes(filter.description.toLowerCase())) &&
       (!filter.status || e.status === filter.status)
     )
   })
+  
+  
+  
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
