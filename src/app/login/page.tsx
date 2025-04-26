@@ -1,9 +1,7 @@
-// File: src/app/login/page.tsx
 'use client'
 
 import React, { useState } from 'react'
-import Link from 'next/link'
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { getAuth, updateProfile, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 import { app } from '../firebase/firebaseConfig'
 import { useRouter } from 'next/navigation'
 import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore'
@@ -12,8 +10,11 @@ export default function LoginPage() {
   const auth = getAuth(app)
   const db = getFirestore(app)
   const router = useRouter()
+  
   const [email, setEmail] = useState('')
   const [pwd, setPwd] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [mode, setMode] = useState<'login'|'signup'>('login')
   const [error, setError] = useState<string|null>(null)
 
@@ -22,27 +23,29 @@ export default function LoginPage() {
     setError(null)
     try {
       let userCredential;
+
       if (mode === 'login') {
         userCredential = await signInWithEmailAndPassword(auth, email, pwd)
       } else {
-        // Create the user in Firebase Authentication
         userCredential = await createUserWithEmailAndPassword(auth, email, pwd)
-        
-        // Create a user document in Firestore
+
+        await updateProfile(userCredential.user, {
+          displayName: `${firstName} ${lastName}`
+        })
+
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           id: userCredential.user.uid,
           email: email,
-          role: 'employee', // Default role for new users
+          fullName: `${firstName} ${lastName}`,
+          role: 'employee',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString()
         })
       }
 
-      // Check user role in Firestore
       const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid))
       const role = userDoc.data()?.role || 'employee'
 
-      // Redirect based on role
       if (role === 'supervisor') {
         router.replace('/')
       } else {
@@ -59,8 +62,37 @@ export default function LoginPage() {
         <h2 className="text-2xl font-bold mb-6 text-gray-900">
           {mode === 'login' ? 'Log In' : 'Sign Up'}
         </h2>
+        
         {error && <p className="text-red-600 mb-4">{error}</p>}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <>
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  required
+                  className="mt-1 w-full border border-gray-300 text-gray-900 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  required
+                  className="mt-1 w-full border border-gray-300 text-gray-900 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -69,9 +101,10 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="mt-1 w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full border border-gray-300 text-gray-900 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             <input
@@ -80,9 +113,10 @@ export default function LoginPage() {
               value={pwd}
               onChange={e => setPwd(e.target.value)}
               required
-              className="mt-1 w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full border border-gray-300 text-gray-900 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -90,6 +124,7 @@ export default function LoginPage() {
             {mode === 'login' ? 'Log In' : 'Sign Up'}
           </button>
         </form>
+
         <div className="mt-4 text-center">
           <button
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}

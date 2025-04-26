@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { collection, onSnapshot, query, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../app/firebase/firebaseConfig' // adjust path if different
 
-interface Expense {
+export interface Expense {
   id: string
   uid: string
   merchant: string
