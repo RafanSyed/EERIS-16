@@ -71,7 +71,7 @@ export default function ReportsPage() {
       {/* Navigation */}
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden">
         <div className="flex space-x-6 items-center">
-          {role === 'supervisor' && (
+          {role !== 'employee' && (
             <Link href="/" className="text-black hover:text-gray-900">
               Home
             </Link>

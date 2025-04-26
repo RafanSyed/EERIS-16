@@ -21,7 +21,7 @@ export default function ExpensesPage() {
   const { user, loading, role } = useAuth()
   const router = useRouter()
   const auth = getAuth(app)
-  const isSupervisor = role === 'supervisor'
+  const isSupervisor = role === 'supervisor' || 'admin'
 
   useEffect(() => {
     if (!loading && !user) {

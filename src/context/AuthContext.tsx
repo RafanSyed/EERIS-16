@@ -7,7 +7,7 @@ import { db, auth } from '../app/firebase/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 
 // Define possible roles
-export type Role = 'employee' | 'supervisor'
+export type Role = 'employee' | 'supervisor' | 'admin'
 
 interface AuthContextType {
   user: User | null
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const snap = await getDoc(doc(db, 'users', u.uid))
           const data = snap.data()
           // Default to employee if no explicit supervisor tag
-          setRole(data?.role === 'supervisor' ? 'supervisor' : 'employee')
+          setRole(data?.role || 'employee')
         } catch (err) {
           console.error('Error fetching user role:', err)
           setRole('employee')

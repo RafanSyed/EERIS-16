@@ -46,7 +46,7 @@ export default function LoginPage() {
       const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid))
       const role = userDoc.data()?.role || 'employee'
 
-      if (role === 'supervisor') {
+      if (role === 'supervisor' || 'admin') {
         router.replace('/')
       } else {
         router.replace('/dashboard')
