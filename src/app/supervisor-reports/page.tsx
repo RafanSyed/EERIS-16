@@ -79,7 +79,7 @@ export default function SupervisorReportsPage() {
       setProcessing(true)
       setProcessResult(null)
 
-      // Query for approved, unpaid expenses
+     
       const q = query(
         collection(db, 'expenses'),
         where('status', '==', 'Approved'),
@@ -90,7 +90,7 @@ export default function SupervisorReportsPage() {
       let totalAmount = 0
       let processedCount = 0
 
-      // Process each expense
+      
       for (const doc of snapshot.docs) {
         const expense = doc.data()
         await updateDoc(doc.ref, {

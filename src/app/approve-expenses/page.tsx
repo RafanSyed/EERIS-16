@@ -7,8 +7,16 @@ import { getAuth, signOut } from 'firebase/auth'
 import { app } from '../firebase/firebaseConfig'
 import { useAuth } from '../../context/AuthContext'
 import { useExpenses } from '../../context/ExpensesContext'
-import { Timestamp } from 'firebase/firestore'
-import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
+import {
+  Timestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+  getDoc,
+} from 'firebase/firestore'
 import { db } from '../firebase/firebaseConfig'
 
 interface Expense {
@@ -28,11 +36,13 @@ export default function ApproveExpensesPage() {
   const { expenses, updateExpense } = useExpenses()
   const router = useRouter()
   const auth = getAuth(app)
+
   const [processing, setProcessing] = useState(false)
   const [processResult, setProcessResult] = useState<{ count: number; total: number } | null>(null)
   const [rejectionComment, setRejectionComment] = useState('')
   const [showRejectionModal, setShowRejectionModal] = useState(false)
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
+  const [userNames, setUserNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!loading) {
@@ -44,6 +54,28 @@ export default function ApproveExpensesPage() {
     }
   }, [user, loading, role, router])
 
+  useEffect(() => {
+    const fetchUserNames = async () => {
+      const uniqueUids = Array.from(new Set(expenses.map(e => e.uid)))
+      const names: Record<string, string> = {}
+
+      for (const uid of uniqueUids) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', uid))
+          names[uid] = userDoc.data()?.fullName || 'User'
+        } catch {
+          names[uid] = 'User'
+        }
+      }
+
+      setUserNames(names)
+    }
+
+    if (expenses.length > 0) {
+      fetchUserNames()
+    }
+  }, [expenses])
+
   const handleLogout = async () => {
     await signOut(auth)
     router.replace('/login')
@@ -54,11 +86,7 @@ export default function ApproveExpensesPage() {
       setProcessing(true)
       setProcessResult(null)
 
-      const q = query(
-        collection(db, 'expenses'),
-        where('status', '==', 'Approved')
-      )
-
+      const q = query(collection(db, 'expenses'), where('status', '==', 'Approved'))
       const snapshot = await getDocs(q)
       let totalAmount = 0
       let processedCount = 0
@@ -75,10 +103,7 @@ export default function ApproveExpensesPage() {
         }
       }
 
-      setProcessResult({
-        count: processedCount,
-        total: totalAmount
-      })
+      setProcessResult({ count: processedCount, total: totalAmount })
     } catch (error) {
       console.error('Error processing payments:', error)
       alert('Error processing payments. Please try again.')
@@ -104,9 +129,9 @@ export default function ApproveExpensesPage() {
   const handleRejectConfirm = async () => {
     if (!selectedExpense) return
     try {
-      await updateExpense(selectedExpense.id, { 
+      await updateExpense(selectedExpense.id, {
         status: 'Rejected',
-        rejectionComment: rejectionComment || '' 
+        rejectionComment: rejectionComment || ''
       })
       setShowRejectionModal(false)
       setRejectionComment('')
@@ -121,17 +146,6 @@ export default function ApproveExpensesPage() {
     return <div className="p-6 text-gray-900">Loading…</div>
   }
 
-  if (role === 'employee') {
-    return (
-      <div className="min-h-screen bg-gray-100 p-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-          <p className='text-1xl font-bold mb-6 text-gray-900'>Only supervisors can access this page.</p>
-        </div>
-      </div>
-    )
-  }
-
   const pendingExpenses = expenses.filter(expense => expense.status === 'Pending')
 
   return (
@@ -141,7 +155,11 @@ export default function ApproveExpensesPage() {
           <Link href="/" className="text-gray-800 hover:text-gray-900">Home</Link>
           <Link href="/supervisorDash" className="text-gray-800 hover:text-gray-900">Supervisor Dashboard</Link>
           <Link href="/approve-expenses" className="text-blue-700 font-semibold hover:text-blue-900">Approve Expenses</Link>
-          <Link href="/user-management" className="text-gray-800 hover:text-gray-900">User Management</Link>
+          {role === 'admin' && (
+            <Link href="/user-management" className="text-gray-800 hover:text-gray-900">
+              User Management
+            </Link>
+          )}
         </div>
         <button
           onClick={handleLogout}
@@ -165,11 +183,7 @@ export default function ApproveExpensesPage() {
 
         {processResult && (
           <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-            <div className="flex items-center">
-              <p>
-                {processResult.count} reports processed. Total paid: ${processResult.total.toFixed(2)}
-              </p>
-            </div>
+            <p>{processResult.count} reports processed. Total paid: ${processResult.total.toFixed(2)}</p>
           </div>
         )}
 
@@ -195,7 +209,9 @@ export default function ApproveExpensesPage() {
               ) : (
                 pendingExpenses.map(expense => (
                   <tr key={expense.id}>
-                    <td className="px-6 py-4 text-sm text-black">{expense.uid}</td>
+                    <td className="px-6 py-4 text-sm text-black">
+                      {userNames[expense.uid] || 'User'}
+                    </td>
                     <td className="px-6 py-4 text-sm text-black">${expense.amount.toFixed(2)}</td>
                     <td className="px-6 py-4 text-sm text-black">{expense.category}</td>
                     <td className="px-6 py-4 text-sm text-black">{new Date(expense.date).toLocaleDateString()}</td>
@@ -221,7 +237,6 @@ export default function ApproveExpensesPage() {
           </table>
         </div>
 
-        {/* Rejection Modal */}
         {showRejectionModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">

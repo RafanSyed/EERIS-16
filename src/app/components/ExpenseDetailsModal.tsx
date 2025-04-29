@@ -148,6 +148,15 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
             <strong>Status:</strong> {renderStatusBadge(expense.status)}
           </div>
 
+          {expense.rejectionComment && (
+            <div>
+              <label className="block font-semibold">Rejection Comment</label>
+              <div className="border p-2 rounded text-gray-900 bg-gray-100">
+                {expense.rejectionComment}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block font-semibold">Items</label>
             <textarea
