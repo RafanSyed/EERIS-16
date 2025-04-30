@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const { expenses } = useExpenses()
   const router = useRouter()
   const auth = getAuth(app)
-  const isSupervisor = role === 'supervisor'
+  const isSupervisor = role === 'supervisor' || 'admin'
 
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
@@ -89,7 +89,7 @@ export default function DashboardPage() {
       {/* Navigation */}
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <div className="flex space-x-6 items-center">
-          {isSupervisor && (
+          {role !== 'employee' && (
             <Link href="/" className="text-gray-800 hover:text-gray-900">
               Home
             </Link>

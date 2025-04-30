@@ -22,6 +22,8 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const isEditable = expense.status === 'Pending'
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setEditedExpense((prev: any) => ({ ...prev, [name]: value }))
@@ -64,7 +66,7 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
         category: editedExpense.category,
         date: editedExpense.date,
         description: editedExpense.description,
-        status: 'Pending', // Reset status to Pending
+        status: 'Pending',
         rejectionComment: ''
       })
 
@@ -79,9 +81,9 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-4">
+      <div className="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto mx-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Edit Expense</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Expense Details</h2>
           <button
             onClick={onClose}
             className="text-gray-600 hover:text-gray-800 text-xl font-bold"
@@ -98,6 +100,7 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
               value={editedExpense.merchant}
               onChange={handleChange}
               className="w-full border p-2 rounded text-gray-900"
+              readOnly={!isEditable}
             />
           </div>
 
@@ -110,6 +113,7 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
               value={editedExpense.amount}
               onChange={handleChange}
               className="w-full border p-2 rounded text-gray-900"
+              readOnly={!isEditable}
             />
           </div>
 
@@ -120,11 +124,10 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
               value={editedExpense.category}
               onChange={handleChange}
               className="w-full border p-2 rounded text-gray-900"
+              disabled={!isEditable}
             >
               {categories.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
           </div>
@@ -137,12 +140,22 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
               value={editedExpense.date}
               onChange={handleChange}
               className="w-full border p-2 rounded text-gray-900"
+              readOnly={!isEditable}
             />
           </div>
 
           <div className="flex items-center space-x-2">
             <strong>Status:</strong> {renderStatusBadge(expense.status)}
           </div>
+
+          {expense.rejectionComment && (
+            <div>
+              <label className="block font-semibold">Rejection Comment</label>
+              <div className="border p-2 rounded text-gray-900 bg-gray-100">
+                {expense.rejectionComment}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block font-semibold">Items</label>
@@ -152,19 +165,29 @@ export default function ExpenseDetailsModal({ expense, onClose }: { expense: any
               onChange={handleChange}
               className="w-full border p-2 rounded text-gray-900"
               rows={4}
+              readOnly={!isEditable}
             />
           </div>
 
           {error && <p className="text-red-600">{error}</p>}
 
           <div className="flex justify-end mt-6 space-x-4">
-            <button
-              onClick={handleSaveChanges}
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-400"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+            {isEditable ? (
+              <button
+                onClick={handleSaveChanges}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-400"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+              >
+                Close
+              </button>
+            )}
           </div>
         </div>
       </div>

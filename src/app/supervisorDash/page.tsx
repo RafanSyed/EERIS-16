@@ -12,7 +12,6 @@ import ExpenseTable from '../components/ExpenseTables'
 
 const db = getFirestore(app)
 
-
 export default function SupervisorDashboardPage() {
   const { user, loading, role } = useAuth()
   const { expenses } = useExpenses()
@@ -26,6 +25,7 @@ export default function SupervisorDashboardPage() {
     status: '',
     employee: '',
   })
+
   const [userNames, setUserNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -77,18 +77,18 @@ export default function SupervisorDashboardPage() {
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <div className="flex space-x-6 items-center">
-          <Link href="/" className="text-gray-800 hover:text-gray-900">
-            Home
-          </Link>
+          <Link href="/" className="text-gray-800 hover:text-gray-900">Home</Link>
           <Link href="/supervisorDash" className="text-blue-700 font-semibold hover:text-blue-900">
             Supervisor Dashboard
           </Link>
           <Link href="/approve-expenses" className="text-gray-800 hover:text-gray-900">
             Approve Expenses
           </Link>
-          <Link href="/user-management" className="text-gray-800 hover:text-gray-900">
-            User Management
-          </Link>
+          {role === 'admin' && (
+            <Link href="/user-management" className="text-gray-800 hover:text-gray-900">
+              User Management
+            </Link>
+          )}
         </div>
         <button
           onClick={handleLogout}
