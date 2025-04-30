@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const { expenses } = useExpenses()
   const router = useRouter()
   const auth = getAuth(app)
-  const isSupervisor = role === 'supervisor'
+  const isSupervisor = role === 'supervisor' || 'admin'
 
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
